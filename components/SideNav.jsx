@@ -24,13 +24,13 @@ import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
-import Joyride from "react-joyride";
 import { TranslationModal } from "@/components/TranslationModal";
 import { useLanguage } from "@/context/LanguageContext";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 export function SideNav({ isOpen, setIsOpen, navConfig, type }) {
   const [isMobile, setIsMobile] = useState(false);
-  const [runSidebarTour, setRunSidebarTour] = useState(false);
   const [showTranslationModal, setShowTranslationModal] = useState(false);
   const pathname = usePathname();
   const navRefs = useRef({});
@@ -41,78 +41,88 @@ export function SideNav({ isOpen, setIsOpen, navConfig, type }) {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
-    // Listen for the event from DashboardPage to start sidebar tour
-    const handleStartSidebarTour = (event) => {
-      if (event.detail?.startTour) {
-        // Ensure sidebar is open before starting the tour
-        setIsOpen(true);
-
-        // Wait a bit for the sidebar to fully expand
-        setTimeout(() => {
-          setRunSidebarTour(true);
-        }, 500);
-      }
-    };
-
-    window.addEventListener("startSidebarTour", handleStartSidebarTour);
-
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("startSidebarTour", handleStartSidebarTour);
-    };
-  }, [setIsOpen]);
-
-  // Also listen for reset tour events when the restart button is clicked
-  useEffect(() => {
-    const handleResetTour = () => {
-      // The sidebar tour will be started after the dashboard tour completes
-      // via the existing startSidebarTour event, so we don't need to do anything here
-      setRunSidebarTour(false);
-    };
-
-    window.addEventListener("resetTours", handleResetTour);
-    return () => {
-      window.removeEventListener("resetTours", handleResetTour);
-    };
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Add custom CSS for tour highlighting when tour is active
+  // Listen for the startSidebarTour event dispatched after dashboard tour ends
   useEffect(() => {
-    if (runSidebarTour) {
-      // Add CSS for tour highlighting
-      const styleEl = document.createElement("style");
-      styleEl.id = "sidebar-tour-highlighting-styles";
-      styleEl.innerHTML = `
-        .react-joyride__spotlight {
-          border: 3px solid #1CAC78 !important;
-          box-shadow: 0 0 15px rgba(28, 172, 120, 0.5) !important;
-        }
-        
-        /* Add highlight to specific nav sections during the tour */
-        .main-nav-section.spotlight-active,
-        .management-nav-section.spotlight-active,
-        .finance-nav-section.spotlight-active,
-        .product-nav-section.spotlight-active,
-        .bottom-nav-section.spotlight-active {
-          background-color: rgba(28, 172, 120, 0.1);
-          border-radius: 8px;
-          transition: background-color 0.3s ease;
-        }
-      `;
-      document.head.appendChild(styleEl);
-
-      return () => {
-        // Clean up when tour ends
-        const styleElement = document.getElementById(
-          "sidebar-tour-highlighting-styles"
-        );
-        if (styleElement) {
-          styleElement.remove();
-        }
-      };
-    }
-  }, [runSidebarTour]);
+    const handleStartSidebarTour = (event) => {
+      if (!event.detail?.startTour) return;
+      setIsOpen(true);
+      setTimeout(() => {
+        const driverObj = driver({
+          showProgress: true,
+          animate: true,
+          smoothScroll: true,
+          nextBtnText: "Next →",
+          prevBtnText: "← Back",
+          doneBtnText: "Finish",
+          onDestroyStarted: () => driverObj.destroy(),
+          steps: [
+            {
+              element: ".nav-container",
+              popover: {
+                title: "🧭 Sidebar Navigation",
+                description: "This sidebar gives you easy access to all features of your NGO management system.",
+                side: "right",
+              },
+            },
+            {
+              element: "#nav-dashboard",
+              popover: {
+                title: "🏠 Dashboard",
+                description: "Your main overview — metrics, quick actions, and recent activity.",
+                side: "right",
+              },
+            },
+            {
+              element: ".management-nav-section",
+              popover: {
+                title: "⚙️ Management",
+                description: "Manage activities, members, campaigns and more from here.",
+                side: "right",
+              },
+            },
+            {
+              element: ".finance-nav-section",
+              popover: {
+                title: "💰 Finance",
+                description: "Track all donations and financial records for your NGO.",
+                side: "right",
+              },
+            },
+            {
+              element: ".product-nav-section",
+              popover: {
+                title: "📦 Products & Inventory",
+                description: "Manage your NGO's products and inventory supplies.",
+                side: "right",
+              },
+            },
+            {
+              element: "#translate-button",
+              popover: {
+                title: "🌐 Translate",
+                description: "Click here to change the platform language.",
+                side: "right",
+              },
+            },
+            {
+              element: "#logout-button",
+              popover: {
+                title: "🚪 Logout",
+                description: "Click here to safely log out of your account.",
+                side: "right",
+              },
+            },
+          ],
+        });
+        driverObj.drive();
+      }, 500);
+    };
+    window.addEventListener("startSidebarTour", handleStartSidebarTour);
+    return () => window.removeEventListener("startSidebarTour", handleStartSidebarTour);
+  }, [setIsOpen]);
 
   const toggleSideNav = () => setIsOpen(!isOpen);
 
@@ -126,157 +136,6 @@ export function SideNav({ isOpen, setIsOpen, navConfig, type }) {
   const translateNavItem = (name) => {
     const key = name.toLowerCase().replace(/\s+/g, '_');
     return translations[key] || name;
-  };
-
-  // Generate tour steps based on available navigation items
-  const generateTourSteps = () => {
-    const steps = [
-      {
-        target: ".nav-container",
-        content:
-          translations.sidebar_tour_intro || 
-          "This sidebar gives you easy access to all the features of your NGO management system.",
-        placement: "right",
-        disableBeacon: true,
-      },
-    ];
-
-    // Add steps for main nav items
-    if (navConfig.mainNavItems?.length) {
-      steps.push({
-        target: ".main-nav-section",
-        content: translations.main_nav_description || "These are your primary navigation options.",
-        placement: "right",
-      });
-
-      // Add specific steps for important main nav items
-      navConfig.mainNavItems.forEach((item) => {
-        if (item.name === "Dashboard") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content:
-              translations.dashboard_description || 
-              "Access your main dashboard to see an overview of all activities and metrics.",
-            placement: "right",
-          });
-        } else if (item.name === "Reports") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content:
-              translations.reports_description || 
-              "View and generate detailed reports about your NGO's operations and impact.",
-            placement: "right",
-          });
-        }
-      });
-    }
-
-    // Add steps for management nav items
-    if (navConfig.managementNavItems?.length) {
-      steps.push({
-        target: ".management-nav-section",
-        content:
-          translations.management_section_description || 
-          "This section helps you manage all your NGO's operational activities.",
-        placement: "right",
-      });
-
-      // Add specific steps for important management nav items
-      navConfig.managementNavItems.forEach((item) => {
-        if (item.name === "Activities") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content:
-              translations.activities_description || 
-              "Create and manage your NGO's activities, events, and campaigns.",
-            placement: "right",
-          });
-        } else if (item.name === "Members") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content:
-              translations.members_description || 
-              "Manage your team members, volunteers, and their permissions.",
-            placement: "right",
-          });
-        }
-      });
-    }
-
-    // Add steps for finance nav items
-    if (navConfig.financeNavItems?.length) {
-      steps.push({
-        target: ".finance-nav-section",
-        content: translations.finance_section_description || 
-                "Track all financial aspects of your NGO in this section.",
-        placement: "right",
-      });
-
-      // Add specific steps for important finance nav items
-      navConfig.financeNavItems.forEach((item) => {
-        if (item.name === "Donations") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content: translations.donations_description || 
-                    "Track and manage all donations received by your NGO.",
-            placement: "right",
-          });
-        }
-      });
-    }
-
-    // Add steps for product nav items
-    if (navConfig.ProductNavItems?.length) {
-      steps.push({
-        target: ".product-nav-section",
-        content: translations.product_section_description || 
-                "Manage your NGO's inventory and products in this section.",
-        placement: "right",
-      });
-
-      // Add specific steps for important product nav items
-      navConfig.ProductNavItems.forEach((item) => {
-        if (item.name === "Products" || item.name === "Inventory") {
-          steps.push({
-            target: `#nav-${item.name.toLowerCase()}`,
-            content:
-              item.name === "Products"
-                ? (translations.products_description || 
-                  "Create and manage products your NGO offers or distributes.")
-                : (translations.inventory_description || 
-                  "Keep track of your NGO's inventory and supplies."),
-            placement: "right",
-          });
-        }
-      });
-    }
-
-    // Add steps for bottom nav items
-    if (navConfig.bottomNavItems?.length) {
-      steps.push({
-        target: ".bottom-nav-section",
-        content: translations.bottom_nav_description || 
-                "Access important account and system settings here.",
-        placement: "right",
-      });
-    }
-
-    // Add step for the logout button
-    steps.push({
-      target: "#logout-button",
-      content: translations.logout_description || "Click here to safely log out of your account.",
-      placement: "right",
-    });
-
-    // Add step for the translation button
-    steps.push({
-      target: "#translate-button",
-      content: translations.translate_description || 
-              "Click here to change the language of the platform.",
-      placement: "right",
-    });
-
-    return steps;
   };
 
   const renderNavItems = (items, sectionClass) => (
@@ -313,50 +172,6 @@ export function SideNav({ isOpen, setIsOpen, navConfig, type }) {
       })}
     </ul>
   );
-
-  // Handle tour callback
-  const handleTourCallback = (data) => {
-    const { status, index, type } = data;
-
-    // Handle adding active class to the current section being highlighted
-    if (type === "step:before") {
-      // Clear any existing active highlights
-      document.querySelectorAll(".spotlight-active").forEach((el) => {
-        el.classList.remove("spotlight-active");
-      });
-
-      // Get the current step target
-      const currentStep = generateTourSteps()[index];
-      if (currentStep && currentStep.target) {
-        const targetSelector = currentStep.target;
-        // Check if it's one of our section targets
-        if (
-          [
-            ".main-nav-section",
-            ".management-nav-section",
-            ".finance-nav-section",
-            ".product-nav-section",
-            ".bottom-nav-section",
-          ].includes(targetSelector)
-        ) {
-          const targetEl = document.querySelector(targetSelector);
-          if (targetEl) {
-            targetEl.classList.add("spotlight-active");
-          }
-        }
-      }
-    }
-
-    if (status === "finished" || status === "skipped") {
-      // Save that the tour has been completed
-      localStorage.setItem("hasCompletedFullTour", "true");
-
-      // Remove any active highlights
-      document.querySelectorAll(".spotlight-active").forEach((el) => {
-        el.classList.remove("spotlight-active");
-      });
-    }
-  };
 
   return (
     <>
@@ -510,43 +325,6 @@ export function SideNav({ isOpen, setIsOpen, navConfig, type }) {
         onClose={() => setShowTranslationModal(false)} 
       />
 
-      {/* Sidebar Tour */}
-      <Joyride
-        steps={generateTourSteps()}
-        run={runSidebarTour}
-        continuous
-        showSkipButton
-        showProgress
-        scrollToFirstStep
-        disableOverlayClose
-        spotlightClicks
-        styles={{
-          options: {
-            zIndex: 10000,
-            arrowColor: "#1CAC78",
-            backgroundColor: "#fff",
-            overlayColor: "rgba(0, 0, 0, 0.5)",
-            primaryColor: "#1CAC78",
-            textColor: "#333",
-            spotlightPadding: 8, // Increased padding
-          },
-          buttonNext: {
-            backgroundColor: "#1CAC78",
-          },
-          buttonBack: {
-            color: "#1CAC78",
-          },
-          spotlight: {
-            backgroundColor: "transparent",
-          },
-          tooltip: {
-            fontSize: "14px",
-            padding: "15px",
-            boxShadow: "0 0 20px rgba(0, 0, 0, 0.3)",
-          },
-        }}
-        callback={handleTourCallback}
-      />
     </>
   );
 }

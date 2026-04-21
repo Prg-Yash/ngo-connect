@@ -3,24 +3,85 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import Joyride from "react-joyride";
 import { MetricsOverview } from "@/components/ngo-dashboard/metrics-overview";
 import { QuickActions } from "@/components/ngo-dashboard/quick-actions";
 import { RecentActivities } from "@/components/ngo-dashboard/recent-activities";
 import { ReportsSection } from "@/components/ngo-dashboard/reports-section";
 import { HelpCircle, Globe } from "lucide-react"; // Added Globe icon for translation
 import { Button } from "@/components/ui/button"; // Import Button component
-import { useLanguage } from "@/context/LanguageContext"; // Import language context
-import { TranslationModal } from "@/components/TranslationModal"; // Import TranslationModal
+import { useLanguage } from "@/context/LanguageContext";
+import { TranslationModal } from "@/components/TranslationModal";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 export default function DashboardPage() {
   const [ngoName, setNgoName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [runTour, setRunTour] = useState(false);
-  const [showRestartButton, setShowRestartButton] = useState(false);
   const [showTranslationModal, setShowTranslationModal] = useState(false);
-  const { language, translations } = useLanguage(); // Use language context
+  const [showRestartButton, setShowRestartButton] = useState(false);
+  const { language, translations } = useLanguage();
+
+  const startTour = () => {
+    const driverObj = driver({
+      showProgress: true,
+      animate: true,
+      overlayColor: "rgba(0,0,0,0.5)",
+      smoothScroll: true,
+      nextBtnText: translations.next || "Next →",
+      prevBtnText: translations.back || "← Back",
+      doneBtnText: translations.finish || "Finish",
+      onDestroyStarted: () => {
+        setShowRestartButton(true);
+        driverObj.destroy();
+        // Chain into sidebar tour
+        window.dispatchEvent(new CustomEvent("startSidebarTour", { detail: { startTour: true } }));
+      },
+      steps: [
+        {
+          element: "#dashboard-title",
+          popover: {
+            title: "👋 Welcome!",
+            description: translations.dashboard_tour_welcome || "Welcome to your NGO dashboard! This is your central hub for managing all NGO activities.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#metrics-overview",
+          popover: {
+            title: "📊 Metrics",
+            description: translations.dashboard_tour_metrics || "Track your donations, beneficiaries reached, and other key performance metrics.",
+            side: "top",
+          },
+        },
+        {
+          element: "#quick-actions",
+          popover: {
+            title: "⚡ Quick Actions",
+            description: translations.dashboard_tour_actions || "Perform key tasks faster — create campaigns, register beneficiaries, and more.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#recent-activities",
+          popover: {
+            title: "📋 Recent Activities",
+            description: translations.dashboard_tour_activities || "See all your recent activities and updates here.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#reports-section",
+          popover: {
+            title: "📈 Reports",
+            description: translations.dashboard_tour_reports || "Generate and analyze reports for your NGO's performance and track your impact over time.",
+            side: "top",
+          },
+        },
+      ],
+    });
+    driverObj.drive();
+  };
 
   useEffect(() => {
     const fetchNgoName = async () => {
@@ -54,16 +115,11 @@ export default function DashboardPage() {
         setNgoName(ngoDoc.data().ngoName || "Unnamed NGO");
         setLoading(false);
 
-        // Check if tour should run
         const hasSeenTour = localStorage.getItem("hasSeenDashboardTour");
         if (!hasSeenTour) {
-          // Wait a bit for the UI to fully render before starting the tour
-          setTimeout(() => {
-            setRunTour(true);
-          }, 1000);
           localStorage.setItem("hasSeenDashboardTour", "true");
+          setTimeout(() => startTour(), 1000);
         } else {
-          // If user has seen the tour, show the restart button
           setShowRestartButton(true);
         }
       } catch (err) {
@@ -74,100 +130,6 @@ export default function DashboardPage() {
     };
     fetchNgoName();
   }, []);
-
-  // Handle tour callbacks
-  const handleTourCallback = (data) => {
-    const { status } = data;
-    // When the dashboard tour ends (either completed or skipped), show restart button and trigger sidebar tour
-    if (status === "finished" || status === "skipped") {
-      setShowRestartButton(true);
-
-      // Dispatch a custom event that the SideNav component will listen for
-      const event = new CustomEvent("startSidebarTour", {
-        detail: { startTour: true },
-      });
-      window.dispatchEvent(event);
-    }
-  };
-
-  // Start both tours from beginning
-  const handleRestartTour = () => {
-    // Reset both tours in localStorage
-    localStorage.removeItem("hasSeenDashboardTour");
-    localStorage.removeItem("hasCompletedFullTour");
-
-    // Start the dashboard tour
-    setRunTour(true);
-
-    // Hide restart button during tour
-    setShowRestartButton(false);
-  };
-
-  // Joyride Steps for Dashboard - Updated with translations
-  const tourSteps = [
-    {
-      target: "#dashboard-title",
-      content:
-        translations.dashboard_tour_welcome || 
-        "Welcome to your NGO dashboard! This is your central hub for managing all NGO activities.",
-      placement: "bottom",
-      disableBeacon: true,
-    },
-    {
-      target: "#metrics-overview",
-      content:
-        translations.dashboard_tour_metrics || 
-        "Here you can track your donations, beneficiaries reached, and other key performance metrics.",
-      placement: "top",
-    },
-    {
-      target: "#quick-actions",
-      content:
-        translations.dashboard_tour_actions || 
-        "Use these quick actions to perform key tasks faster, like creating new campaigns or registering beneficiaries.",
-      placement: "bottom",
-    },
-    {
-      target: "#recent-activities",
-      content:
-        translations.dashboard_tour_activities || 
-        "See all your recent activities and updates here, helping you stay on top of what's happening.",
-      placement: "bottom",
-    },
-    {
-      target: "#reports-section",
-      content:
-        translations.dashboard_tour_reports || 
-        "Generate and analyze reports for your NGO's performance and track your impact over time.",
-      placement: "top",
-    },
-  ];
-
-  // CSS to highlight elements during tour
-  useEffect(() => {
-    if (runTour) {
-      // Add CSS for tour highlighting
-      const styleEl = document.createElement("style");
-      styleEl.id = "tour-highlighting-styles";
-      styleEl.innerHTML = `
-        .react-joyride__spotlight {
-          border: 3px solid #1CAC78 !important;
-          box-shadow: 0 0 15px rgba(28, 172, 120, 0.5) !important;
-        }
-      `;
-      document.head.appendChild(styleEl);
-
-      return () => {
-        // Clean up when tour ends
-        const styleElement = document.getElementById(
-          "tour-highlighting-styles"
-        );
-        if (styleElement) {
-          styleElement.remove();
-        }
-      };
-    }
-  }, [runTour]);
 
   // Loading state with translations
   if (loading) {
@@ -195,14 +157,21 @@ export default function DashboardPage() {
       transition={{ duration: 0.5 }}
       className="container mx-auto relative"
     >
-      {/* Header with translation button */}
       <div className="flex justify-between items-center mb-8">
           <h1 id="dashboard-title" className="text-3xl font-bold md:text-4xl">
             {error
               ? translations.ngo_dashboard || "NGO Dashboard"
               : ` ${translations.ngo_dashboard || "NGO Dashboard | "}  Hey ${ngoName}!`}
           </h1>
-          
+          {showRestartButton && (
+            <button
+              onClick={() => { setShowRestartButton(false); startTour(); }}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1CAC78] text-white rounded-full text-sm font-medium shadow hover:bg-[#18a06e] transition-colors animate-pulse"
+            >
+              <HelpCircle size={16} />
+              {translations.restart_guide_tour || "Guide Tour"}
+            </button>
+          )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -225,64 +194,6 @@ export default function DashboardPage() {
           <ReportsSection />
         </div>
       </div>
-
-      {/* Restart Tour Button */}
-      {showRestartButton && (
-        <button
-          id="restart-tour-button"
-          onClick={handleRestartTour}
-          className="fixed animate-pulse top-6 right-6 bg-[#1CAC78] text-white flex items-center gap-2 px-4 py-2 rounded-full shadow-lg hover:bg-[#18a06e] transition-colors z-50"
-          aria-label="Restart Tour"
-        >
-          <HelpCircle size={18} />
-          <span>{translations.restart_guide_tour || "Restart Guide Tour"}</span>
-        </button>
-      )}
-
-      {/* React Joyride Tour */}
-      <Joyride
-        steps={tourSteps}
-        run={runTour}
-        continuous
-        showSkipButton
-        showProgress
-        scrollToFirstStep
-        disableOverlayClose
-        spotlightClicks
-        callback={handleTourCallback}
-        styles={{
-          options: {
-            zIndex: 10000,
-            arrowColor: "#1CAC78",
-            backgroundColor: "#fff",
-            overlayColor: "rgba(0, 0, 0, 0.5)",
-            primaryColor: "#1CAC78",
-            textColor: "#333",
-            spotlightPadding: 15, // Increased padding
-          },
-          tooltip: {
-            fontSize: "14px",
-            padding: "15px",
-            boxShadow: "0 0 20px rgba(0, 0, 0, 0.3)",
-          },
-          buttonNext: {
-            backgroundColor: "#1CAC78",
-          },
-          buttonBack: {
-            color: "#1CAC78",
-          },
-          spotlight: {
-            backgroundColor: "transparent",
-          },
-        }}
-        locale={{
-          back: translations.back || "Back",
-          close: translations.close || "Close",
-          last: translations.finish || "Finish",
-          next: translations.next || "Next",
-          skip: translations.skip || "Skip"
-        }}
-      />
 
       {/* Translation Modal */}
       <TranslationModal 
