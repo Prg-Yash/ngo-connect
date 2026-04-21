@@ -195,6 +195,7 @@ export default function NGOActivities({ ngoId }) {
                         alert("You must be logged in to participate in an activity.");
                         return;
                       }
+                      // demo comment
                       router.push(`/opt-in-participant/${ngoId}/${activity.id}`);
                     }}
                     className="bg-[#1CAC78] hover:bg-[#158f64] text-white"
