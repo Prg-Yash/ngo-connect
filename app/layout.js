@@ -15,14 +15,39 @@ const font = Epilogue({ subsets: ["latin"] });
 
 export const metadata = {
   title: "NGO-Connect",
-  description:
-    "NGO-Connect is a platform for NGOs to manage their activities and events.",
+  description: "NGO-Connect is a platform for NGOs to manage their activities and events.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "NGO-Connect",
+  },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: "website",
+    title: "NGO-Connect",
+    description: "A platform for NGOs to manage their activities, events, campaigns and donations.",
+  },
+};
+
+export const viewport = {
+  themeColor: "#1CAC78",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="NGO-Connect" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className={cn("min-h-screen bg-background antialiased", font.className)}>
         {/* <ThemeProvider
           attribute="class"
