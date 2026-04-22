@@ -1,10 +1,11 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Building2, Key } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Building2, Key, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const Page = () => {
   const router = useRouter();
@@ -12,90 +13,102 @@ const Page = () => {
   const [verificationCode, setVerificationCode] = useState("");
 
   const submitHandler = () => {
+    if (!ngoId || !verificationCode) return;
     router.push(`/register/member/${ngoId}/${verificationCode}`);
   };
 
-  return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="max-w-md w-full mx-auto rounded-2xl p-8 relative">
-        {/* Removed 3D Shadow Effects */}
-        <div className="relative bg-white dark:bg-black rounded-2xl p-6 shadow-md transition-all duration-300">
-          <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
-            Member Verification
-          </h2>
-          <p className="text-neutral-600 text-sm max-w-sm mt-2 dark:text-neutral-300">
-            To register as a member, please fill in your organization details
-            below
-          </p>
+  const isValid = ngoId.trim().length > 0 && verificationCode.trim().length > 0;
 
-          <form className="my-8">
-            <LabelInputContainer className="mb-4">
-              <Label
-                htmlFor="ngoId"
-                className="text-neutral-700 dark:text-neutral-300"
-              >
-                NGO ID
-              </Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-3 h-5 w-5 text-neutral-500" />
-                <Input
-                  id="ngoId"
-                  name="ngoId"
-                  placeholder="Enter Ngo ID"
-                  className="pl-10 h-12 shadow-sm bg-neutral-50 dark:bg-zinc-900 border dark:border-zinc-800 focus:border-neutral-400 dark:focus:border-neutral-600"
-                  onChange={(e) => setNgoId(e.target.value)}
-                />
-              </div>
-            </LabelInputContainer>
-
-            <LabelInputContainer className="mb-8">
-              <Label
-                htmlFor="verificationCode"
-                className="text-neutral-700 dark:text-neutral-300"
-              >
-                Verification Code
-              </Label>
-              <div className="relative">
-                <Key className="absolute left-3 top-3 h-5 w-5 text-neutral-500" />
-                <Input
-                  id="verificationCode"
-                  name="verificationCode"
-                  placeholder="Enter Verification Code"
-                  className="pl-10 h-12 shadow-sm bg-neutral-50 dark:bg-zinc-900 border dark:border-zinc-800 focus:border-neutral-400 dark:focus:border-neutral-600"
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
-            </LabelInputContainer>
-
-            <button
-              onClick={submitHandler}
-              type="button"
-              className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-12 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] hover:scale-[1.02] transition-all duration-200"
-            >
-              Validate &rarr;
-              <BottomGradient />
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const BottomGradient = () => {
   return (
     <>
-      <span className="group-hover/btn:opacity-100 block transition duration-500 opacity-0 absolute h-px w-full -bottom-px inset-x-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
-      <span className="group-hover/btn:opacity-100 blur-sm block transition duration-500 opacity-0 absolute h-px w-1/2 mx-auto -bottom-px inset-x-10 bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
-    </>
-  );
-};
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Join an NGO</h1>
+        <p className="text-gray-500 mt-2 text-sm">
+          Enter your NGO ID and the verification code provided by your admin
+        </p>
+      </div>
 
-const LabelInputContainer = ({ children, className }) => {
-  return (
-    <div className={cn("flex flex-col space-y-2 w-full", className)}>
-      {children}
-    </div>
+      {/* Info banner */}
+      <div className="flex items-start gap-3 bg-[#1CAC78]/5 border border-[#1CAC78]/20 rounded-xl p-4 mb-6">
+        <Building2 className="h-4 w-4 text-[#1CAC78] mt-0.5 shrink-0" />
+        <p className="text-sm text-gray-600">
+          Your NGO admin will provide you with both the{" "}
+          <span className="font-semibold text-gray-800">NGO ID</span> and the{" "}
+          <span className="font-semibold text-gray-800">Verification Code</span> needed to join.
+        </p>
+      </div>
+
+      {/* Form */}
+      <div className="space-y-5">
+        {/* NGO ID */}
+        <div className="space-y-1.5">
+          <Label htmlFor="ngoId" className="text-sm font-medium text-gray-700">NGO ID</Label>
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="ngoId"
+              name="ngoId"
+              placeholder="Enter NGO ID"
+              className="pl-10 h-11 border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1CAC78] focus:ring-[#1CAC78]/20 focus:ring-2 transition-all rounded-xl"
+              onChange={(e) => setNgoId(e.target.value)}
+              value={ngoId}
+            />
+          </div>
+        </div>
+
+        {/* Verification Code */}
+        <div className="space-y-1.5">
+          <Label htmlFor="verificationCode" className="text-sm font-medium text-gray-700">Verification Code</Label>
+          <div className="relative">
+            <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="verificationCode"
+              name="verificationCode"
+              placeholder="Enter verification code"
+              className="pl-10 h-11 border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1CAC78] focus:ring-[#1CAC78]/20 focus:ring-2 transition-all rounded-xl"
+              onChange={(e) => setVerificationCode(e.target.value)}
+              value={verificationCode}
+            />
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button
+          onClick={submitHandler}
+          type="button"
+          disabled={!isValid}
+          className="w-full h-11 bg-[#1CAC78] hover:bg-[#18956A] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+        >
+          Validate & Continue <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-100" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-3 text-gray-400">or</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Link
+          href="/login"
+          className="flex items-center justify-center gap-2 w-full h-11 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+        >
+          Already have an account? Sign in
+        </Link>
+        <Link
+          href="/register"
+          className="flex items-center justify-center gap-2 w-full h-11 text-sm font-medium text-gray-500 hover:text-gray-700 transition-all"
+        >
+          Register a new account instead
+        </Link>
+      </div>
+    </>
   );
 };
 

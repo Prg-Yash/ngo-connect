@@ -3,26 +3,18 @@
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, User, Mail, Lock, Building2 } from "lucide-react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 export default function UserRegistrationPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -34,166 +26,177 @@ export default function UserRegistrationPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const { name, email, password } = formData;
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          email,
-          name,
-          type: "user",
-          userId: user.uid,
-          createdAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-
+      await setDoc(doc(db, "users", user.uid), {
+        email,
+        name,
+        type: "user",
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      }, { merge: true });
       router.push("/dashboard/user");
     } catch (err) {
-      console.error("Error during registration:", err.message);
-      setError(err.message);
-
       if (err.code === "auth/email-already-in-use") {
         setError("Email already in use. Please use a different email.");
       } else if (err.code === "auth/invalid-email") {
         setError("Please enter a valid email address.");
       } else if (err.code === "auth/weak-password") {
         setError("Password must be at least 6 characters long.");
-      } else if (err.code === "auth/invalid-credential") {
-        setError("Invalid email or password.");
-      } else if (err.code === "auth/invalid-password") {
-        setError("Invalid password. Please enter a valid password.");
       } else {
-        setError(err.code);
+        setError(err.message);
       }
-
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 bg-white dark:bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(255,255,255,0.1)] transform hover:translate-y-[-2px] transition-all duration-300 ease-in-out border border-gray-200 dark:border-gray-800">
-      <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
-        Create your account
-      </h2>
-      <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-2">
-        Get registered to the exclusive portal!
-      </p>
+    <>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Create an account</h1>
+        <p className="text-gray-500 mt-2 text-sm">Join NGO-Connect and start making an impact</p>
+      </div>
 
-      <form className="my-8">
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            name="name"
-            placeholder="Your name"
-            type="text"
-            required
-            value={formData.name}
-            onChange={handleChange}
-            className="border-[#1CAC78] focus:border-[#1CAC78]"
-          />
-        </LabelInputContainer>
+      {/* Account type toggle */}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-6">
+        <Link
+          href="/register"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white shadow-sm text-sm font-semibold text-gray-900 transition-all"
+        >
+          <User className="h-3.5 w-3.5" />
+          User
+        </Link>
+        <Link
+          href="/register/ngo"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 transition-all"
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          NGO
+        </Link>
+      </div>
 
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="email">Email Address</Label>
-          <div className="flex gap-2">
+      {/* Form */}
+      <form onSubmit={registerHandle} className="space-y-5">
+        {/* Name */}
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="name"
+              name="name"
+              placeholder="Your full name"
+              type="text"
+              required
+              value={formData.name}
+              onChange={handleChange}
+              className="pl-10 h-11 border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1CAC78] focus:ring-[#1CAC78]/20 focus:ring-2 transition-all rounded-xl"
+            />
+          </div>
+        </div>
+
+        {/* Email */}
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="email"
               name="email"
               placeholder="your@email.com"
+              type="email"
               required
               value={formData.email}
               onChange={handleChange}
-              className="border-[#1CAC78] focus:border-[#1CAC78]"
+              className="pl-10 h-11 border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1CAC78] focus:ring-[#1CAC78]/20 focus:ring-2 transition-all rounded-xl"
             />
           </div>
-        </LabelInputContainer>
+        </div>
 
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="password">Password</Label>
+        {/* Password */}
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
           <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="password"
               name="password"
-              placeholder="••••••••"
+              placeholder="Min. 6 characters"
               type={showPassword ? "text" : "password"}
               required
               value={formData.password}
               onChange={handleChange}
-              className="border-[#1CAC78] focus:border-[#1CAC78]"
+              className="pl-10 pr-10 h-11 border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1CAC78] focus:ring-[#1CAC78]/20 focus:ring-2 transition-all rounded-xl"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-[50%] right-[10px] -translate-y-[50%] cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {showPassword ? <EyeOff /> : <Eye />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-        </LabelInputContainer>
-
-        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-
-        <button
-          className={`relative group/btn ${
-            loading ? "bg-gray-400" : "bg-[#1CAC78] hover:bg-[#18956A]"
-          } w-full text-white rounded-md h-10 font-medium transition-colors duration-200 shadow-[0px_1px_0px_0px_#1CAC7840_inset,0px_-1px_0px_0px_#1CAC7840_inset]`}
-          type="submit"
-          disabled={loading}
-          onClick={registerHandle}
-        >
-          {loading ? "Loading..." : "Register"}
-          <BottomGradient />
-        </button>
-
-        <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-8 h-[1px] w-full" />
-
-        <div className="flex flex-col space-y-4">
-          <Link
-            href="/register/ngo"
-            className="text-sm text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 text-center"
-          >
-            Register as NGO
-          </Link>
-
-          <Link
-            href="/login"
-            className="relative group/btn flex space-x-2 items-center justify-center px-4 w-full text-black rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
-          >
-            <span className="text-neutral-700 dark:text-neutral-300 text-sm">
-              Already have an account? Login
-            </span>
-            <BottomGradient />
-          </Link>
+          {formData.password.length > 0 && formData.password.length < 6 && (
+            <p className="text-xs text-amber-500 flex items-center gap-1 mt-1">
+              Password must be at least 6 characters
+            </p>
+          )}
         </div>
-      </form>
-    </div>
-  );
-}
 
-const BottomGradient = () => {
-  return (
-    <>
-      <span className="group-hover/btn:opacity-100 block transition duration-500 opacity-0 absolute h-px w-full -bottom-px inset-x-0 bg-gradient-to-r from-transparent via-[#1CAC78] to-transparent" />
-      <span className="group-hover/btn:opacity-100 blur-sm block transition duration-500 opacity-0 absolute h-px w-1/2 mx-auto -bottom-px inset-x-10 bg-gradient-to-r from-transparent via-[#1CAC78] to-transparent" />
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
+            {error}
+          </div>
+        )}
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading || !formData.name || !formData.email || formData.password.length < 6}
+          className="w-full h-11 bg-[#1CAC78] hover:bg-[#18956A] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Creating account...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Create Account <ArrowRight className="h-4 w-4" />
+            </span>
+          )}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-100" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-3 text-gray-400">already have an account?</span>
+        </div>
+      </div>
+
+      {/* Login link */}
+      <Link
+        href="/login"
+        className="flex items-center justify-center gap-2 w-full h-11 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+      >
+        Sign in instead
+      </Link>
+
+      {/* Terms */}
+      <p className="text-center text-xs text-gray-400 mt-6">
+        By creating an account, you agree to our{" "}
+        <span className="text-[#1CAC78] cursor-pointer hover:underline">Terms of Service</span>{" "}
+        and{" "}
+        <span className="text-[#1CAC78] cursor-pointer hover:underline">Privacy Policy</span>
+      </p>
     </>
   );
-};
-
-const LabelInputContainer = ({ children, className }) => {
-  return (
-    <div className={cn("flex flex-col space-y-2 w-full", className)}>
-      {children}
-    </div>
-  );
-};
+}

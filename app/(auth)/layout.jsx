@@ -21,7 +21,6 @@ const AuthLayout = ({ children }) => {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, [router]);
 
@@ -30,56 +29,76 @@ const AuthLayout = ({ children }) => {
   }
 
   return (
-    <section className="bg-white min-h-screen">
-      <div className="grid lg:grid-cols-12 items-center justify-center">
-        {/* Left Section */}
-        <section className="relative flex items-center bg-gray-900 lg:col-span-5 xl:col-span-6 lg:h-screen">
-          <Image
-            alt="Background"
-            src={bg}
-            fill
-            priority
-            quality={100}
-            className="absolute inset-0 object-cover w-full h-full opacity-50"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-          />
-          <div className="hidden lg:flex flex-col items-start justify-center lg:p-12 text-white z-10">
-            <a className="block" href="#">
-              <Image
-                src={logo}
-                alt="logo"
-                width={80}
-                height={80}
-                className="rounded-full"
-              />
-            </a>
-            <h1 className="text-3xl font-serif p-4">Welcome to NGO-Connect!</h1>
-            <p className="text-lg font-serif pl-4">
-              where every detail is crafted to make your experience
-              extraordinary
-            </p>
-          </div>
-        </section>
+    <section className="min-h-screen bg-white flex">
+      {/* Left Panel — Brand Visual */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] relative flex-col justify-between p-12 bg-gray-950 overflow-hidden">
+        {/* Background image */}
+        <Image
+          alt="Background"
+          src={bg}
+          fill
+          priority
+          quality={90}
+          className="absolute inset-0 object-cover opacity-30"
+          sizes="50vw"
+        />
 
-        {/* Right Section */}
-        <main className="flex justify-center items-center px-4 py-4 sm:px-8 lg:col-span-7 xl:col-span-6">
-          <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-lg xl:max-w-2xl">
-            {/* Logo for small screens */}
-            <div className="relative lg:hidden flex justify-center mb-6">
-              <a href="#">
-                <Image
-                  src={logo}
-                  alt="logo"
-                  width={60}
-                  height={60}
-                  className="rounded-full"
-                />
-              </a>
-            </div>
-            {/* Content */}
-            <div>{children}</div>
+        {/* Green accent gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1CAC78]/30 via-transparent to-gray-950/80" />
+
+        {/* Top: Logo + Name */}
+        <div className="relative z-10 flex items-center gap-3">
+          <Image
+            src={logo}
+            alt="NGO-Connect Logo"
+            width={44}
+            height={44}
+            className="rounded-xl"
+          />
+          <span className="text-white text-xl font-bold tracking-tight">NGO-Connect</span>
+        </div>
+
+        {/* Center: Headline */}
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 bg-[#1CAC78]/20 border border-[#1CAC78]/40 text-[#4ade9e] text-xs font-semibold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#1CAC78] animate-pulse" />
+            NGO Management Platform
           </div>
-        </main>
+          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
+            Empowering NGOs<br />
+            <span className="text-[#1CAC78]">to do more good.</span>
+          </h1>
+          <p className="text-gray-400 text-base leading-relaxed max-w-sm">
+            Manage campaigns, track donations, coordinate activities, and measure your impact — all in one place.
+          </p>
+        </div>
+
+        {/* Bottom: Stats */}
+        <div className="relative z-10 grid grid-cols-3 gap-4">
+          {[
+            { label: "NGOs Registered", value: "500+" },
+            { label: "Donations Tracked", value: "₹2Cr+" },
+            { label: "Activities Managed", value: "10K+" },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <p className="text-[#1CAC78] text-2xl font-bold">{stat.value}</p>
+              <p className="text-gray-400 text-xs mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right Panel — Auth Form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 sm:px-12">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-10">
+          <Image src={logo} alt="logo" width={36} height={36} className="rounded-lg" />
+          <span className="text-gray-900 text-lg font-bold">NGO-Connect</span>
+        </div>
+
+        <div className="w-full max-w-md">
+          {children}
+        </div>
       </div>
     </section>
   );
